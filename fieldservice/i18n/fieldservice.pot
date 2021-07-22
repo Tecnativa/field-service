@@ -795,6 +795,12 @@ msgid "Date"
 msgstr ""
 
 #. module: fieldservice
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_location__reminder_date_before_receipt
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_person__reminder_date_before_receipt
+msgid "Days Before Receipt"
+msgstr ""
+
+#. module: fieldservice
 #: model:fsm.team,name:fieldservice.fsm_team_default
 msgid "Default Team"
 msgstr ""
@@ -2032,6 +2038,12 @@ msgid "Number of Actions"
 msgstr ""
 
 #. module: fieldservice
+#: model:ir.model.fields,help:fieldservice.field_fsm_location__reminder_date_before_receipt
+#: model:ir.model.fields,help:fieldservice.field_fsm_person__reminder_date_before_receipt
+msgid "Number of days to send reminder email before the promised receipt date"
+msgstr ""
+
+#. module: fieldservice
 #: model:ir.model.fields,field_description:fieldservice.field_fsm_equipment__message_has_error_counter
 #: model:ir.model.fields,field_description:fieldservice.field_fsm_location__message_has_error_counter
 #: model:ir.model.fields,field_description:fieldservice.field_fsm_order__message_has_error_counter
@@ -2070,6 +2082,12 @@ msgstr ""
 #. module: fieldservice
 #: model:ir.model.fields,field_description:fieldservice.field_fsm_location__calendar_id
 msgid "Office Hours"
+msgstr ""
+
+#. module: fieldservice
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_location__on_time_rate
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_person__on_time_rate
+msgid "On-Time Delivery Rate"
 msgstr ""
 
 #. module: fieldservice
@@ -2224,6 +2242,14 @@ msgid "Others"
 msgstr ""
 
 #. module: fieldservice
+#: model:ir.model.fields,help:fieldservice.field_fsm_location__on_time_rate
+#: model:ir.model.fields,help:fieldservice.field_fsm_person__on_time_rate
+msgid ""
+"Over the past 12 months; the number of products received on time divided by "
+"the number of ordered products."
+msgstr ""
+
+#. module: fieldservice
 #: model:ir.model.fields,field_description:fieldservice.field_fsm_equipment__owned_by_id
 msgid "Owned By"
 msgstr ""
@@ -2339,6 +2365,30 @@ msgstr ""
 #. module: fieldservice
 #: model:ir.model.fields,field_description:fieldservice.field_res_config_settings__module_fieldservice_project
 msgid "Projects and Tasks"
+msgstr ""
+
+#. module: fieldservice
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_location__purchase_line_ids
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_person__purchase_line_ids
+msgid "Purchase Lines"
+msgstr ""
+
+#. module: fieldservice
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_location__purchase_warn
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_person__purchase_warn
+msgid "Purchase Order"
+msgstr ""
+
+#. module: fieldservice
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_location__purchase_order_count
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_person__purchase_order_count
+msgid "Purchase Order Count"
+msgstr ""
+
+#. module: fieldservice
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_location__receipt_reminder_email
+#: model:ir.model.fields,field_description:fieldservice.field_fsm_person__receipt_reminder_email
+msgid "Receipt Reminder"
 msgstr ""
 
 #. module: fieldservice
