@@ -31,19 +31,16 @@ class ResPartner(models.Model):
 
     def _compute_owned_location_count(self):
         for partner in self:
-            res = self.env["fsm.location"].search_count(
+            partner.owned_location_count = self.env["fsm.location"].search_count(
                 [("owner_id", "child_of", partner.id)]
             )
-            partner.owned_location_count = res
 
     def action_open_owned_locations(self):
         for partner in self:
             owned_location_ids = self.env["fsm.location"].search(
                 [("owner_id", "child_of", partner.id)]
             )
-            action = self.env["ir.actions.actions"]._for_xml_id(
-                "fieldservice.action_fsm_location"
-            )
+            action = self.env.ref("fieldservice.action_fsm_location").sudo().read()[0]
             action["context"] = {}
             if len(owned_location_ids) > 1:
                 action["domain"] = [("id", "in", owned_location_ids.ids)]
@@ -70,6 +67,6 @@ class ResPartner(models.Model):
             wiz.action_convert_location(partner_to_convert)
 
     def write(self, value):
-        res = super(ResPartner, self).write(value)
+        res = super().write(value)
         self._convert_fsm_location()
         return res

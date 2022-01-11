@@ -8,10 +8,11 @@ from odoo.exceptions import ValidationError
 class FSMLocation(models.Model):
     _name = "fsm.location"
     _inherits = {"res.partner": "partner_id"}
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "fsm.model.mixin"]
     _description = "Field Service Location"
+    _stage_type = "location"
 
-    direction = fields.Char(string="Directions")
+    direction = fields.Char()
     partner_id = fields.Many2one(
         "res.partner",
         string="Related Partner",
@@ -33,7 +34,7 @@ class FSMLocation(models.Model):
         domain="[('is_company', '=', False)," " ('fsm_location', '=', False)]",
         index=True,
     )
-    description = fields.Char(string="Description")
+    description = fields.Char()
     territory_id = fields.Many2one("res.territory", string="Territory")
     branch_id = fields.Many2one("res.branch", string="Branch")
     district_id = fields.Many2one("res.district", string="District")
@@ -65,23 +66,12 @@ class FSMLocation(models.Model):
         string="Sub Locations", compute="_compute_sublocation_ids"
     )
     complete_name = fields.Char(
-        string="Complete Name", compute="_compute_complete_name", store=True
-    )
-    hide = fields.Boolean(default=False)
-
-    stage_id = fields.Many2one(
-        "fsm.stage",
-        string="Stage",
-        tracking=True,
-        index=True,
-        copy=False,
-        group_expand="_read_group_stage_ids",
-        default=lambda self: self._default_stage_id(),
+        compute="_compute_complete_name", recursive=True, store=True
     )
 
     @api.model
     def create(self, vals):
-        res = super(FSMLocation, self).create(vals)
+        res = super().create(vals)
         res.update({"fsm_location": True})
         return res
 
@@ -120,47 +110,6 @@ class FSMLocation(models.Model):
         if not recs and not self.env.company.search_on_complete_name:
             recs = self.search([("name", operator, name)] + args, limit=limit)
         return recs.name_get()
-
-    @api.model
-    def _read_group_stage_ids(self, stages, domain, order):
-        stage_ids = self.env["fsm.stage"].search([("stage_type", "=", "location")])
-        return stage_ids
-
-    def _default_stage_id(self):
-        return self.env["fsm.stage"].search(
-            [("stage_type", "=", "location"), ("sequence", "=", "1")]
-        )
-
-    def next_stage(self):
-        seq = self.stage_id.sequence
-        next_stage = self.env["fsm.stage"].search(
-            [("stage_type", "=", "location"), ("sequence", ">", seq)],
-            order="sequence asc",
-        )
-        if next_stage:
-            self.stage_id = next_stage[0]
-            self._onchange_stage_id()
-
-    def previous_stage(self):
-        seq = self.stage_id.sequence
-        prev_stage = self.env["fsm.stage"].search(
-            [("stage_type", "=", "location"), ("sequence", "<", seq)],
-            order="sequence desc",
-        )
-        if prev_stage:
-            self.stage_id = prev_stage[0]
-            self._onchange_stage_id()
-
-    @api.onchange("stage_id")
-    def _onchange_stage_id(self):
-        # get last stage
-        heighest_stage = self.env["fsm.stage"].search(
-            [("stage_type", "=", "location")], order="sequence desc", limit=1
-        )
-        if self.stage_id.name == heighest_stage.name:
-            self.hide = True
-        else:
-            self.hide = False
 
     @api.onchange("fsm_parent_id")
     def _onchange_fsm_parent_id(self):
@@ -293,7 +242,7 @@ class FSMLocation(models.Model):
             action["context"].update({"default_service_location_id": self.id})
             if len(contacts) == 0 or len(contacts) > 1:
                 action["domain"] = [("id", "in", contacts.ids)]
-            elif contacts:
+            else:
                 action["views"] = [
                     (self.env.ref("base." + "view_partner_form").id, "form")
                 ]
@@ -321,7 +270,7 @@ class FSMLocation(models.Model):
             action["context"].update({"default_location_id": self.id})
             if len(equipment) == 0 or len(equipment) > 1:
                 action["domain"] = [("id", "in", equipment.ids)]
-            elif equipment:
+            else:
                 action["views"] = [
                     (
                         self.env.ref("fieldservice." + "fsm_equipment_form_view").id,
@@ -333,8 +282,7 @@ class FSMLocation(models.Model):
 
     def _compute_sublocation_ids(self):
         for loc in self:
-            sublocation = self.comp_count(0, 0, loc)
-            loc.sublocation_count = sublocation
+            loc.sublocation_count = self.comp_count(0, 0, loc)
 
     def action_view_sublocation(self):
         """
@@ -352,7 +300,7 @@ class FSMLocation(models.Model):
             action["context"].update({"default_fsm_parent_id": self.id})
             if len(sublocation) > 1 or len(sublocation) == 0:
                 action["domain"] = [("id", "in", sublocation.ids)]
-            elif sublocation:
+            else:
                 action["views"] = [
                     (
                         self.env.ref("fieldservice." + "fsm_location_form_view").id,
@@ -367,8 +315,7 @@ class FSMLocation(models.Model):
 
     def _compute_equipment_ids(self):
         for loc in self:
-            equipment = self.comp_count(0, 1, loc)
-            loc.equipment_count = equipment
+            loc.equipment_count = self.comp_count(0, 1, loc)
 
     @api.constrains("fsm_parent_id")
     def _check_location_recursion(self):

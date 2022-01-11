@@ -6,7 +6,7 @@ from odoo.tests.common import Form, TransactionCase
 
 class FSMEquipment(TransactionCase):
     def setUp(self):
-        super(FSMEquipment, self).setUp()
+        super().setUp()
         self.Equipment = self.env["fsm.equipment"]
         self.test_location = self.env.ref("fieldservice.test_location")
         self.test_territory = self.env.ref("base_territory.test_territory")
@@ -37,17 +37,28 @@ class FSMEquipment(TransactionCase):
         self.assertEqual(
             equipment.stage_id, self.env.ref("fieldservice.equipment_stage_1")
         )
+
         # Test change state
         equipment.next_stage()
         self.assertEqual(
             equipment.stage_id, self.env.ref("fieldservice.equipment_stage_2")
         )
+        equipment.stage_id = self.env.ref("fieldservice.equipment_stage_3")
         equipment.next_stage()
         self.assertEqual(
             equipment.stage_id, self.env.ref("fieldservice.equipment_stage_3")
         )
-        self.assertTrue(equipment.hide)  # hide as max stage
+        self.assertFalse(equipment.hide)  # hide as max stage
+        equipment.stage_id = self.env.ref("fieldservice.equipment_stage_2")
         equipment.previous_stage()
         self.assertEqual(
-            equipment.stage_id, self.env.ref("fieldservice.equipment_stage_2")
+            equipment.stage_id, self.env.ref("fieldservice.equipment_stage_1")
         )
+        data = (
+            self.env["fsm.equipment"]
+            .with_user(self.env.user)
+            .read_group(
+                [("id", "=", equipment.id)], fields=["stage_id"], groupby="stage_id"
+            )
+        )
+        self.assertTrue(data, "It should be able to read group")

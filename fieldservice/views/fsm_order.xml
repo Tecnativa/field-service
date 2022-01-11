@@ -102,10 +102,7 @@
                                 </group>
                                 <group id="schedule" string="Schedule Details">
                                     <field name="scheduled_date_start" />
-                                    <field
-                                        name="scheduled_duration"
-                                        widget="float_time"
-                                    />
+                                    <field name="scheduled_duration" />
                                     <field name="scheduled_date_end" readonly="1" />
                                 </group>
                             </group>
@@ -149,11 +146,7 @@
                                 <group id="execution-left">
                                     <field name="date_start" />
                                     <field name="date_end" />
-                                    <field
-                                        name="duration"
-                                        widget="float_time"
-                                        readonly="1"
-                                    />
+                                    <field name="duration" readonly="1" />
                                 </group>
                                 <group id="execution-right" />
                             </group>
@@ -197,7 +190,7 @@
         <field name="name">fsm.order.tree</field>
         <field name="model">fsm.order</field>
         <field name="arch" type="xml">
-            <tree name="orders" string="Orders" default_order="scheduled_date_start">
+            <tree name="orders" default_order="scheduled_date_start">
                 <field name="scheduled_date_start" />
                 <field name="name" />
                 <field name="location_id" />

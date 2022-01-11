@@ -7,7 +7,7 @@ from odoo.tests.common import Form, TransactionCase
 
 class FSMLocation(TransactionCase):
     def setUp(self):
-        super(FSMLocation, self).setUp()
+        super().setUp()
         self.Location = self.env["fsm.location"]
         self.Equipment = self.env["fsm.equipment"]
         self.test_location = self.env.ref("fieldservice.test_location")
@@ -58,14 +58,16 @@ class FSMLocation(TransactionCase):
         self.assertEqual(
             location.stage_id, self.env.ref("fieldservice.location_stage_2")
         )
+        location.stage_id = self.env.ref("fieldservice.location_stage_3")
         location.next_stage()
         self.assertEqual(
             location.stage_id, self.env.ref("fieldservice.location_stage_3")
         )
-        self.assertTrue(location.hide)  # hide as max stage
+        self.assertFalse(location.hide)  # hide as max stage
+        location.stage_id = self.env.ref("fieldservice.location_stage_2")
         location.previous_stage()
         self.assertEqual(
-            location.stage_id, self.env.ref("fieldservice.location_stage_2")
+            location.stage_id, self.env.ref("fieldservice.location_stage_1")
         )
         # Test create fsm.location.person, when has if territory has person_ids
         self.env.company.auto_populate_persons_on_location = True
@@ -79,7 +81,35 @@ class FSMLocation(TransactionCase):
         self.assertEqual(len(location.person_ids), 0)
         location._onchange_territory_id()
         self.assertEqual(len(location.person_ids), 3)
-        location.owner_id.action_open_owned_locations()
+        res = location.owner_id.action_open_owned_locations()
+        self.assertIn(location.id, res["domain"][0][2])
+        self.location_1.fsm_parent_id = self.test_location
+        self.location_1.ref = "Test Ref"
+        self.location_3.ref = "Test Ref3"
+        self.location_1._compute_complete_name()
+        self.location_2._compute_complete_name()
+        self.location_3._compute_complete_name()
+        self.location_3.geo_localize()
+        loc = self.env["fsm.location"].name_search("Child Location")
+        self.env.user.company_id.search_on_complete_name = True
+        loc = self.env["fsm.location"].name_search("Child Location")
+        self.assertEqual(len(loc), 1, "name_search should have 1 item")
+        self.location_2.state_id = self.env.ref("base.state_au_1").id
+        self.location_2.country_id = self.env.ref("base.af").id
+        self.location_2._onchange_country_id()
+        self.location_1.state_id = self.env.ref("base.state_au_1").id
+        self.location_1._onchange_state()
+        self.assertEqual(
+            self.location_1.country_id.id, self.location_1.state_id.country_id.id
+        )
+        data = (
+            self.env["fsm.location"]
+            .with_user(self.env.user)
+            .read_group(
+                [("id", "=", location.id)], fields=["stage_id"], groupby="stage_id"
+            )
+        )
+        self.assertTrue(data, "It should be able to read group")
 
     def test_fsm_multi_sublocation(self):
         """Test create location with many sub locations
@@ -118,7 +148,7 @@ class FSMLocation(TransactionCase):
             self.test_location.id: 1,  # Topup = 9
             self.location_1.id: 1,  # Topup = 8
             self.location_2.id: 5,  # Topup = 7
-            self.location_3.id: 2,
+            self.location_3.id: 1,
         }  # Topup = 2
         for loc_id, num_eq in location_vs_num_eq.items():
             for i in range(num_eq):
@@ -137,18 +167,23 @@ class FSMLocation(TransactionCase):
                 self.location_2.equipment_count,
                 self.location_3.equipment_count,
             ),
-            (9, 8, 7, 2),
+            (8, 7, 6, 1),
         )  # !!
         # Test smart button to open equipment
         loc_eq_ids = self.test_location.action_view_equipment()["domain"][0][2]
         loc_1_eq_ids = self.location_1.action_view_equipment()["domain"][0][2]
         loc_2_eq_ids = self.location_2.action_view_equipment()["domain"][0][2]
-        loc_3_eq_ids = self.location_3.action_view_equipment()["domain"][0][2]
+        loc_3_eq_ids = self.location_3.action_view_equipment()["res_id"]
         self.assertEqual(
-            (len(loc_eq_ids), len(loc_1_eq_ids), len(loc_2_eq_ids), len(loc_3_eq_ids)),
-            (9, 8, 7, 2),
+            (
+                len(loc_eq_ids),
+                len(loc_1_eq_ids),
+                len(loc_2_eq_ids),
+                len([loc_3_eq_ids]),
+            ),
+            (8, 7, 6, 1),
         )
-
+        self.test_loc_partner._compute_owned_location_count()
         # Set service_location_id, on relavant res.partner, test contact count
         self.test_loc_partner.service_location_id = self.test_location
         self.location_partner_1.service_location_id = self.location_1
@@ -178,7 +213,6 @@ class FSMLocation(TransactionCase):
         """
         FSM Location can be created from the res.partner form
         like invoice addresses or delivery addresses.
-
         child of partner with type = fsm_location
         """
         self.test_partner = self.env.ref("fieldservice.test_partner")

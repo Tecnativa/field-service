@@ -8,10 +8,10 @@ class FSMTag(models.Model):
     _name = "fsm.tag"
     _description = "Field Service Tag"
 
-    name = fields.Char(string="Name", required=True)
+    name = fields.Char(required=True)
     parent_id = fields.Many2one("fsm.tag", string="Parent")
     color = fields.Integer("Color Index", default=10)
-    full_name = fields.Char(string="Full Name", compute="_compute_full_name")
+    full_name = fields.Char(compute="_compute_full_name")
     company_id = fields.Many2one(
         "res.company",
         string="Company",
@@ -24,7 +24,8 @@ class FSMTag(models.Model):
 
     def _compute_full_name(self):
         for record in self:
-            if record.parent_id:
-                record.full_name = record.parent_id.name + "/" + record.name
-            else:
-                record.full_name = record.name
+            record.full_name = (
+                record.parent_id.name + "/" + record.name
+                if record.parent_id
+                else record.name
+            )

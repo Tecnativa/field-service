@@ -3,7 +3,7 @@
 {
     "name": "Field Service",
     "summary": "Manage Field Service Locations, Workers and Orders",
-    "version": "14.0.1.19.0",
+    "version": "15.0.1.0.0",
     "license": "AGPL-3",
     "category": "Field Service",
     "author": "Open Source Integrators, Odoo Community Association (OCA)",
@@ -46,4 +46,9 @@
     "application": True,
     "development_status": "Beta",
     "maintainers": ["wolfhall", "max3903"],
+    "assets": {
+        "web.assets_backend": [
+            "fieldservice/static/src/scss/team_dashboard.scss",
+        ]
+    },
 }

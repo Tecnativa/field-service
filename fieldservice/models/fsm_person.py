@@ -7,8 +7,9 @@ from odoo import api, fields, models
 class FSMPerson(models.Model):
     _name = "fsm.person"
     _inherits = {"res.partner": "partner_id"}
-    _inherit = ["mail.thread.blacklist"]
+    _inherit = ["mail.thread.blacklist", "fsm.model.mixin"]
     _description = "Field Service Worker"
+    _stage_type = "worker"
 
     partner_id = fields.Many2one(
         "res.partner",
@@ -20,16 +21,7 @@ class FSMPerson(models.Model):
     )
     category_ids = fields.Many2many("fsm.category", string="Categories")
     calendar_id = fields.Many2one("resource.calendar", string="Working Schedule")
-    stage_id = fields.Many2one(
-        "fsm.stage",
-        string="Stage",
-        index=True,
-        copy=False,
-        group_expand="_read_group_stage_ids",
-        default=lambda self: self._default_stage_id(),
-    )
-    hide = fields.Boolean(default=False)
-    mobile = fields.Char(string="Mobile")
+    mobile = fields.Char()
     territory_ids = fields.Many2many("res.territory", string="Territories")
     active = fields.Boolean(default=True)
     active_partner = fields.Boolean(
@@ -40,7 +32,7 @@ class FSMPerson(models.Model):
         for person in self:
             if not person.active and not person.partner_id.active:
                 person.partner_id.toggle_active()
-        super(FSMPerson, self).toggle_active()
+        return super().toggle_active()
 
     @api.model
     def _search(
@@ -52,7 +44,7 @@ class FSMPerson(models.Model):
         count=False,
         access_rights_uid=None,
     ):
-        res = super(FSMPerson, self)._search(
+        res = super()._search(
             args=args,
             offset=offset,
             limit=limit,
@@ -62,7 +54,7 @@ class FSMPerson(models.Model):
         )
         # Check for args first having location_ids as default filter
         for arg in args:
-            if isinstance(arg, (list)):
+            if isinstance(args, (list)):
                 if arg[0] == "location_ids":
                     # If given int search ID, else search name
                     if isinstance(arg[2], int):
@@ -73,12 +65,12 @@ class FSMPerson(models.Model):
                             (arg[2],),
                         )
                     else:
-                        arg[2] = "%" + arg[2] + "%"
+                        arg_2 = "%" + arg[2] + "%"
                         self.env.cr.execute(
                             "SELECT id "
                             "FROM fsm_location "
                             "WHERE complete_name like %s",
-                            (arg[2],),
+                            (arg_2,),
                         )
                         location_ids = self.env.cr.fetchall()
                         if location_ids:
@@ -98,45 +90,4 @@ class FSMPerson(models.Model):
     @api.model
     def create(self, vals):
         vals.update({"fsm_person": True})
-        return super(FSMPerson, self).create(vals)
-
-    @api.model
-    def _read_group_stage_ids(self, stages, domain, order):
-        stage_ids = self.env["fsm.stage"].search([("stage_type", "=", "worker")])
-        return stage_ids
-
-    def _default_stage_id(self):
-        return self.env["fsm.stage"].search(
-            [("stage_type", "=", "worker"), ("sequence", "=", "1")]
-        )
-
-    def next_stage(self):
-        seq = self.stage_id.sequence
-        next_stage = self.env["fsm.stage"].search(
-            [("stage_type", "=", "worker"), ("sequence", ">", seq)],
-            order="sequence asc",
-        )
-        if next_stage:
-            self.stage_id = next_stage[0]
-            self._onchange_stage_id()
-
-    def previous_stage(self):
-        seq = self.stage_id.sequence
-        prev_stage = self.env["fsm.stage"].search(
-            [("stage_type", "=", "worker"), ("sequence", "<", seq)],
-            order="sequence desc",
-        )
-        if prev_stage:
-            self.stage_id = prev_stage[0]
-            self._onchange_stage_id()
-
-    @api.onchange("stage_id")
-    def _onchange_stage_id(self):
-        # get last stage
-        heighest_stage = self.env["fsm.stage"].search(
-            [("stage_type", "=", "worker")], order="sequence desc", limit=1
-        )
-        if self.stage_id.name == heighest_stage.name:
-            self.hide = True
-        else:
-            self.hide = False
+        return super().create(vals)
